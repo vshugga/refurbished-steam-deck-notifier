@@ -55,6 +55,16 @@ pip install requests discord-webhook
 
 ## ❗ Important Notes
 - This script **does not continuously run**—use a cron job (Linux/macOS) or Task Scheduler (Windows) to automate execution.
+  
+   **Configuring a cron job (for Linux/macOS):**
+   ```bash
+   $ crontab -e
+   ```
+   ```bash
+   */3 * * * *     <path to python(f.e. /usr/bin/python3)> /path/to/script.py >> path/to/logfile.log
+   ```
+   Save and exit the editor you shouldn't need to restart. Normally the crontab should start doing its job now!
+   It will call the script every 3 minutes.
 - You need **a Raspberry Pi or a server** if you want it running 24/7.
 
 ## 📝 License
