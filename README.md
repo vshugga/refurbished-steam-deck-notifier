@@ -50,8 +50,6 @@ pip install requests discord-webhook
   - Modify `superduperscraper()` calls at the end of the script to check for additional package IDs.
 - **Change Notification Format:**
   - Modify the `webhook.content` message inside the script.
-- **Adjust Check Frequency:**
-  - Add a `time.sleep()` command to run checks at intervals.
 
 ## ❗ Important Notes
 - This script **does not continuously run**—use a cron job (Linux/macOS) or Task Scheduler (Windows) to automate execution.
