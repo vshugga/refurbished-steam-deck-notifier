@@ -65,9 +65,9 @@ pip install requests discord-webhook
    It will call the script every 3 minutes.
 - You need **a Raspberry Pi or a server** if you want it running 24/7.
 
-## 📝 License
-This script is provided **as-is** with no guarantees. Use at your own risk!
-
 ## ❤️ Support
 If you find this useful, consider buying me a coffee on [**Ko-fi**](https://ko-fi.com/Y8Y41BZ8SM)
+
+## 🥇 Special Thanks
+Massive thanks to [leo-petrucci](https://github.com/leo-petrucci) for rewriting parts of the code and guiding me toward properly using the Steam API — the project was way worse before that! Your help made a huge improvement.
 
