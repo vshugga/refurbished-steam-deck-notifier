@@ -60,8 +60,8 @@ def superduperscraper(version, urlSuffix, isOLED: bool, log_file: str, country_c
     
     oldvalue = ""
     # Get previous availability from file
-    if os.path.isfile(urlSuffix + "gb.txt"):
-        with open(urlSuffix + "gb.txt", "r") as file_read:
+    if os.path.isfile(urlSuffix + "_" + country_code + ".txt"):
+        with open(urlSuffix + "_" + country_code + ".txt", "r") as file_read:
             oldvalue = file_read.read()
     
     print("Previous value: " + oldvalue)
@@ -78,7 +78,7 @@ def superduperscraper(version, urlSuffix, isOLED: bool, log_file: str, country_c
         print(f"{current_time} >> {version}GB {'OLED' if isOLED else 'LCD'} Result: {availability}")
         
         # Save new availability to file
-        with open(urlSuffix + "gb.txt", "w") as file:
+        with open(urlSuffix + "_" + country_code + ".txt", "w") as file:
             file.write(availability)
         
         # Check if status changed
@@ -144,6 +144,8 @@ def main():
     
     if role_ids:
         print(f"Role mapping loaded: {len(role_ids)} entries")
+        if not len(role_ids) == len(models):
+            print("Warning..............Role mapping doesn't match models. Pinging roles won't work as expected.")
     else:
         print("No role mapping - notifications will not ping roles")
 
@@ -155,9 +157,6 @@ def main():
         ("512", "1202542", True),   # 512gb oled
         ("1024", "1202547", True),  # 1tb oled
     ]
-
-    if not len(role_ids) == len(models):
-        print("Warning..............Role mapping doesn't match models. Pinging roles won't work as expected.")
     
     for version, package_id, is_oled in models:
         superduperscraper(version, package_id, is_oled, log_file, 
