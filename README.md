@@ -2,9 +2,6 @@
 
 [![](https://dcbadge.limes.pink/api/server/5gpFTMkvJn)](https://discord.gg/5gpFTMkvJn)
 # Steam Deck Availability Notifier
-
-# Steam Deck Availability Notifier
-
 This script checks the availability of refurbished Steam Decks on Steam and sends notifications to a specified Discord webhook. It runs by querying Steam's API and comparing the current stock status with previously stored values.
 
 ## 🚀 Features
