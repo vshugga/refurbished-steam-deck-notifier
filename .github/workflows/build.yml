@@ -35,10 +35,10 @@ jobs:
             executable_extension: ''
         
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Set up Python
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: '3.9'
         
@@ -62,16 +62,16 @@ jobs:
         fi
         
     - name: Upload artifacts (always)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: steam-deck-notifier-${{ matrix.os }}
         path: dist/
         
     - name: Upload release assets
       if: github.event.inputs.create_release == 'true'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: release-assets
+        name: release-assets-${{ matrix.os }}
         path: dist/${{ matrix.asset_name }}${{ matrix.executable_extension }}
 
   release:
@@ -79,26 +79,27 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Download all release assets
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
-        name: release-assets
+        pattern: release-assets-*
         path: ./release-assets/
+        merge-multiple: true
         
     - name: Create Release
       id: create_release
-      uses: actions/create-release@v1
+      uses: softprops/action-gh-release@v2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ github.event.inputs.release_tag || format('v{0}', github.run_number) }}
-        release_name: Release ${{ github.event.inputs.release_tag || format('v{0}', github.run_number) }}
+        name: Release ${{ github.event.inputs.release_tag || format('v{0}', github.run_number) }}
         draft: false
         prerelease: false
         body: |
-          Refurbished Steam Deck Notifier Release
+          Steam Deck Notifier Release
           
           ## Downloads
           - **Linux**: steam-deck-notifier-linux
@@ -106,33 +107,7 @@ jobs:
           - **macOS**: steam-deck-notifier-macos
           
           Built from commit: ${{ github.sha }}
-        
-    - name: Upload Linux Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./release-assets/steam-deck-notifier-linux
-        asset_name: steam-deck-notifier-linux
-        asset_content_type: application/octet-stream
-        
-    - name: Upload Windows Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./release-assets/steam-deck-notifier-windows.exe
-        asset_name: steam-deck-notifier-windows.exe
-        asset_content_type: application/octet-stream
-        
-    - name: Upload macOS Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./release-assets/steam-deck-notifier-macos
-        asset_name: steam-deck-notifier-macos
-        asset_content_type: application/octet-stream
+        files: |
+          ./release-assets/steam-deck-notifier-linux
+          ./release-assets/steam-deck-notifier-windows.exe
+          ./release-assets/steam-deck-notifier-macos
