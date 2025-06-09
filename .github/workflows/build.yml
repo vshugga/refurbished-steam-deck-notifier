@@ -49,7 +49,7 @@ jobs:
         
     - name: Build executable
       run: |
-        pyinstaller --onefile --name steam-deck-notifier steam_deck_checker.py
+        pyinstaller --onefile --name steam-deck-notifier notifier.py
         
     - name: Rename executable for release
       if: github.event.inputs.create_release == 'true'
