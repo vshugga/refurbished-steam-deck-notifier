@@ -68,7 +68,7 @@ python steam_deck_checker.py \
   --country-code US \
   --webhook-url "https://discord.com/api/webhooks/YOUR_WEBHOOK" \
   --role-mapping roles.json \
-  --csv-log availability.csv
+  --csv-dir csv-logs
 ```
 
 ### Discord Role Mapping (Optional)
