@@ -164,11 +164,15 @@ def main():
     parser.add_argument('--ntfy-url', default=None,
                        help='Ntfy URL for notifications')
     parser.add_argument('--daemon-sleep-time', type=int, default=-1, help='Run in daemon mode by specifying sleep time')
+    parser.add_argument('--ntfy-test', help='Send a one time Ntfy test notification (must specify --ntfy-url)')
     parser.add_argument('--model', default=None, help='Only check the specified model ID')
     parser.add_argument('--role-mapping', help='JSON file containing package_id to role_id mapping')
     parser.add_argument('--csv-log', help='Deprecated: This option is no longer supported (last supported version v2.0.0).')
     
     args = parser.parse_args()
+
+    if args.ntfy_test and args.ntfy_url:
+        send_ntfy_notification('Test!', args.ntfy_url)
 
     if args.csv_log:
         print("w: Deprecated: This option is no longer supported (last supported version v2.0.0).")
@@ -221,7 +225,7 @@ def main():
         sleeptime = args.daemon_sleep_time
         if sleeptime <= 0:
             break
-        
+
         sleep(sleeptime)
 
 if __name__ == "__main__":
