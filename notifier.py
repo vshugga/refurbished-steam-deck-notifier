@@ -14,7 +14,7 @@
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from time import gmtime, strftime
+from time import gmtime, strftime, sleep
 import requests
 from discord_webhook import DiscordWebhook
 import os
@@ -26,7 +26,8 @@ import json
 
 # Default values
 DEFAULT_COUNTRY_CODE = 'DE'
-DEFAULT_WEBHOOK_URL = "https://discord.com/api/webhooks/some_webhook"
+# DEFAULT_WEBHOOK_URL = "https://discord.com/api/webhooks/some_webhook"
+# DEFAULT_NTFY_URL = "https://ntfy.sh/vblankssteamdeckrefurbs"
 
 def get_daily_csv_path(csv_dir: str, country_code: str) -> str:
     """Generate the CSV file path for today's date and country"""
@@ -67,12 +68,9 @@ def log_availability_data(version, package_id, available, is_oled, csv_dir: str,
         writer = csv.writer(f)
         writer.writerow([unix_timestamp, version, display_type, package_id, available])
 
-def superduperscraper(version, urlSuffix, isOLED: bool, csv_dir: str, country_code: str, webhook_url: str, role_ids: dict):
+def superduperscraper(version, urlSuffix, isOLED: bool, csv_dir: str, country_code: str, webhook_url: str, role_ids: dict, ntfy_url: str):
     # Build Steam API URL with country code
     url = f'https://api.steampowered.com/IPhysicalGoodsService/CheckInventoryAvailableByPackage/v1?origin=https:%2F%2Fstore.steampowered.com&country_code={country_code}&packageid='
-    
-    # Create Discord webhook
-    webhook = DiscordWebhook(url=webhook_url, content="error")
     
     roleIdWithCountry = role_ids.get(urlSuffix, "") if role_ids else ""
     
@@ -111,16 +109,29 @@ def superduperscraper(version, urlSuffix, isOLED: bool, csv_dir: str, country_co
             if availability == "True":
                 # Include role ping only if role ID exists
                 role_ping = f" <@&{roleIdWithCountry}>" if roleIdWithCountry else ""
-                webhook.content = f"refurbished {version}GB {display_type} steam deck available{role_ping}"
+                msg = f"refurbished {version}GB {display_type} steam deck available{role_ping}"
             else:
-                webhook.content = f"refurbished {version}GB {display_type} steam deck not available"
-            webhook.execute()
+                msg = f"refurbished {version}GB {display_type} steam deck not available"
+            
+            if webhook_url:
+                # Create Discord webhook
+                webhook = DiscordWebhook(url=webhook_url, content="error")
+                webhook.content = msg
+                webhook.execute()
+
+            if ntfy_url:
+                send_ntfy_notification(msg, ntfy_url)
             
     except requests.RequestException as e:
-        print(f"Error fetching data for {version}GB: {e}")
+        error_msg = f"Error fetching data for {version}GB: {e}"
+        print(error_msg)
         log_availability_data(version, urlSuffix, False, isOLED, csv_dir, country_code)
+        if ntfy_url:
+            send_ntfy_notification(error_msg, ntfy_url)
     except Exception as e:
         print(f"Unexpected error for {version}GB: {e}")
+        if ntfy_url:
+            send_ntfy_notification(error_msg, ntfy_url)
 
 def load_role_mapping(role_file: str) -> dict:
     """Load role mapping from JSON file"""
@@ -134,14 +145,20 @@ def load_role_mapping(role_file: str) -> dict:
         print(f"Warning: Could not load role mapping from {role_file}: {e}")
         return {}
 
+def send_ntfy_notification(msg:str, url:str):
+    requests.post(url, data=msg.encode(encoding='utf-8'))
+
 def main():
     """Main function to check all Steam Deck models"""
     parser = argparse.ArgumentParser(description='Check Steam Deck availability and optionally log to CSV')
     parser.add_argument('--csv-dir', help='Directory path for daily CSV log files')
     parser.add_argument('--country-code', default=DEFAULT_COUNTRY_CODE, 
                        help=f'Country code for Steam API (default: {DEFAULT_COUNTRY_CODE})')
-    parser.add_argument('--webhook-url', default=DEFAULT_WEBHOOK_URL,
+    parser.add_argument('--webhook-url', default=None,
                        help='Discord webhook URL for notifications')
+    parser.add_argument('--ntfy-url', default=None,
+                       help='Ntfy URL for notifications')
+    parser.add_argument('--daemon-sleep-time', type=int, default=-1, help='Run in daemon mode by specifying sleep time')
     parser.add_argument('--role-mapping', help='JSON file containing package_id to role_id mapping')
     parser.add_argument('--csv-log', help='Deprecated: This option is no longer supported (last supported version v2.0.0).')
     
@@ -181,9 +198,15 @@ def main():
     else:
         print("No role mapping - notifications will not ping roles")
     
-    for version, package_id, is_oled in models:
-        superduperscraper(version, package_id, is_oled, csv_dir, 
-                         args.country_code, args.webhook_url, role_ids)
+    while True:
+        for version, package_id, is_oled in models:
+            superduperscraper(version, package_id, is_oled, csv_dir, 
+                            args.country_code, args.webhook_url, role_ids, args.ntfy_url)
+        
+        sleeptime = args.daemon_sleep_time
+        if sleeptime <= 0:
+            break
+        sleep(sleeptime)
 
 if __name__ == "__main__":
     main()
