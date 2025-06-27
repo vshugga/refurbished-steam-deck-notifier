@@ -26,6 +26,7 @@ import json
 
 # Default values
 DEFAULT_COUNTRY_CODE = 'DE'
+NTFY_EXCEPTION_TIMEOUT = 6000 # Wait this long before sending another exception notification
 # DEFAULT_WEBHOOK_URL = "https://discord.com/api/webhooks/some_webhook"
 # DEFAULT_NTFY_URL = "https://ntfy.sh/vblankssteamdeckrefurbs"
 
@@ -128,10 +129,14 @@ def superduperscraper(version, urlSuffix, isOLED: bool, csv_dir: str, country_co
         log_availability_data(version, urlSuffix, False, isOLED, csv_dir, country_code)
         if ntfy_url:
             send_ntfy_notification(error_msg, ntfy_url)
+        return False
     except Exception as e:
         print(f"Unexpected error for {version}GB: {e}")
         if ntfy_url:
             send_ntfy_notification(error_msg, ntfy_url)
+        return False
+    
+    return True
 
 def load_role_mapping(role_file: str) -> dict:
     """Load role mapping from JSON file"""
@@ -159,6 +164,7 @@ def main():
     parser.add_argument('--ntfy-url', default=None,
                        help='Ntfy URL for notifications')
     parser.add_argument('--daemon-sleep-time', type=int, default=-1, help='Run in daemon mode by specifying sleep time')
+    parser.add_argument('--model', default=None, help='Only check the specified model ID')
     parser.add_argument('--role-mapping', help='JSON file containing package_id to role_id mapping')
     parser.add_argument('--csv-log', help='Deprecated: This option is no longer supported (last supported version v2.0.0).')
     
@@ -199,13 +205,23 @@ def main():
         print("No role mapping - notifications will not ping roles")
     
     while True:
+        returns = []
+
         for version, package_id, is_oled in models:
-            superduperscraper(version, package_id, is_oled, csv_dir, 
+            if args.model is not None and package_id != args.model:
+                continue
+            success = superduperscraper(version, package_id, is_oled, csv_dir, 
                             args.country_code, args.webhook_url, role_ids, args.ntfy_url)
+            returns.append(success)
+
+        if not all(returns):
+            print('Some or all requests failed, exitting daemon')
+            break
         
         sleeptime = args.daemon_sleep_time
         if sleeptime <= 0:
             break
+        
         sleep(sleeptime)
 
 if __name__ == "__main__":
